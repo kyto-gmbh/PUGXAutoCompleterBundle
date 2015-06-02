@@ -4,7 +4,8 @@
         var settings = {
             url_list: '',
             url_get:  '',
-            placeholder: ''
+            placeholder: '',
+            minimumInput: 2
         };
         return this.each(function () {
             if (options) {
@@ -31,7 +32,6 @@
                                 text: item.text
                             });
                         });
-                        console.dir(results);
                         return {
                             results: results
                         };
@@ -41,7 +41,7 @@
                 escapeMarkup: function (markup) {
                     return markup;
                 },
-                minimumInputLength: 2
+                minimumInputLength:  settings.minimumInput
             });
             if ($this.val() !== '') {
                 $.ajax({
