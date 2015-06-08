@@ -11,7 +11,7 @@
             if (options) {
                 $.extend(settings, options);
             }
-            var $this = $(this), $fakeInput = $('<input type="text" name="fake' + $this.attr('name') + '">');
+            var $this = $(this), $fakeInput = $('<input type="text" name="' + $this.attr('name') + '">');
             $this.hide().after($fakeInput);
             $fakeInput.select2({
                 ajax: {
@@ -41,13 +41,22 @@
                 escapeMarkup: function (markup) {
                     return markup;
                 },
+                initSelection: function (element, callback) {
+                    $.ajax({
+                        url:     settings.url_get + $this.val(),
+                        success: function (name) {
+                            var data = { "id": $this.val(), "text": name };
+                            callback(data);
+                        }
+                    });
+                },
                 minimumInputLength:  settings.minimumInput
             });
             if ($this.val() !== '') {
                 $.ajax({
                     url:     settings.url_get + $this.val(),
                     success: function (name) {
-                        $fakeInput.val(name);
+                        $fakeInput.select2('val', name);
                     }
                 });
             }
