@@ -29,7 +29,7 @@
                         $.each(data, function (index, item) {
                             results.push({
                                 id: item.id,
-                                text: item.text
+                                text: item.value
                             });
                         });
                         return {
