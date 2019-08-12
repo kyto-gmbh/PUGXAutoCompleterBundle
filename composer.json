@@ -11,15 +11,23 @@
         }
     ],
     "require": {
-        "doctrine/orm": ">2.2",
-        "symfony/framework-bundle": "~2.3",
-        "symfony/form": "~2.3"
+        "doctrine/orm": "~2.2",
+        "symfony/framework-bundle": "~2.3|~3.0",
+        "symfony/form": "~2.3|~3.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "4.*"
+        "phpunit/phpunit": "4.*|5.*",
+        "lexik/form-filter-bundle": ">=3.0"
+    },
+    "suggest": {
+        "lexik/form-filter-bundle" : "To use autocomplete on a filter."
     },
     "autoload": {
         "psr-4": { "PUGX\\AutocompleterBundle\\": "" }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.3.x-dev"
+        }
     }
 }
-

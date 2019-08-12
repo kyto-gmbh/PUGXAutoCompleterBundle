@@ -7,6 +7,7 @@ use PUGX\AutocompleterBundle\Form\Transformer\ObjectToIdTransformer;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Exception\InvalidConfigurationException;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 
 class AutocompleteType extends AbstractType
@@ -24,6 +25,9 @@ class AutocompleteType extends AbstractType
         $this->registry = $registry;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         if (empty($options['class'])) {
@@ -33,19 +37,49 @@ class AutocompleteType extends AbstractType
         $builder->addModelTransformer($transformer);
     }
 
-    public function setDefaultOptions(OptionsResolverInterface $resolver)
+    /**
+     * {@inheritdoc}
+     */
+    public function configureOptions(OptionsResolver $resolver)
     {
         $resolver->setDefaults(array(
-            'class'           => '',
+            'class' => '',
             'invalid_message' => 'The selected item does not exist',
         ));
     }
 
-    public function getParent()
+    /**
+     * BC for Symfony < 2.7.
+     */
+    public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
-        return 'text';
+        $this->configureOptions($resolver);
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function getParent()
+    {
+        // BC for Symfony < 3
+        if (!method_exists('Symfony\Component\Form\AbstractType', 'getBlockPrefix')) {
+            return 'text';
+        }
+
+        return 'Symfony\Component\Form\Extension\Core\Type\TextType';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getBlockPrefix()
+    {
+        return $this->getName();
+    }
+
+    /**
+     * BC for Symfony < 3.0.
+     */
     public function getName()
     {
         return 'autocomplete';

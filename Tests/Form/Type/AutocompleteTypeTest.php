@@ -34,24 +34,28 @@ class AutocompleteTypeTest extends \PHPUnit_Framework_TestCase
     public function testSetDefaultOptions()
     {
         $registry = $this->getMock('Doctrine\Common\Persistence\ManagerRegistry');
-        $resolver = $this->getMock('Symfony\Component\OptionsResolver\OptionsResolverInterface');
+        $resolver = $this->getMock('Symfony\Component\OptionsResolver\OptionsResolver');
         $resolver->expects($this->once())->method('setDefaults');
 
         $type = new AutocompleteType($registry);
-        $type->setDefaultOptions($resolver);
+        $type->configureOptions($resolver);
     }
 
     public function testGetParent()
     {
         $registry = $this->getMock('Doctrine\Common\Persistence\ManagerRegistry');
         $type = new AutocompleteType($registry);
-        $this->assertEquals('text', $type->getParent());
+        if (!method_exists('Symfony\Component\Form\AbstractType', 'getBlockPrefix')) {
+            $this->assertEquals('text', $type->getParent());
+        } else {
+            $this->assertEquals('Symfony\Component\Form\Extension\Core\Type\TextType', $type->getParent());
+        }
     }
 
-    public function testGetName()
+    public function testGetBlockPrefix()
     {
         $registry = $this->getMock('Doctrine\Common\Persistence\ManagerRegistry');
         $type = new AutocompleteType($registry);
-        $this->assertEquals('autocomplete', $type->getName());
+        $this->assertEquals('autocomplete', $type->getBlockPrefix());
     }
 }

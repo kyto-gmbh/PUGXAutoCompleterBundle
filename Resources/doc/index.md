@@ -28,54 +28,60 @@ public function registerBundles()
 
 This bundle requires [jQuery](http://jquery.com/) and [jQuery UI](http://jqueryui.com/).
 As alternative, you can use [Select2](https://select2.github.io/) in place of jQuery UI.
+Note that Select2 version 4 is not supported.
 
 Installation and configuration of these JavaScript libraries is up to you.
+
+If you prefer to see real code in action, you can find it in [this sandbox project](https://github.com/garak/AutoCompleterSandbox).
 
 In your template, include autocompleter.js file:
 
 ```jinja
-{% javascripts
-    'js/jquery.js'
-    'js/jquery-ui.js'
-    '@PUGXAutocompleterBundle/Resources/public/js/autocompleter-jqueryui.js'
-%}
+{% block javascripts %}
+    <script src="//code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+    <script src="{{ asset('bundles/pugxautocompleter/js/autocompleter-jqueryui.js') }}"></script>
+    <script src="{{ asset('js/app.js') }}"></script>
+{% endblock %}
 ```
 
 Or, if you prefer Select2:
 
 ```jinja
-{% javascripts
-    'js/jquery.js'
-    'js/select2.js'
-    '@PUGXAutocompleterBundle/Resources/public/js/autocompleter-select2.js'
-%}
+{% block javascripts %}
+    <script src="//code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/select2/3.5.2/select2.min.js"></script>
+    <script src="{{ asset('bundles/pugxautocompleter/js/autocompleter-select2.js') }}"></script>
+    <script src="{{ asset('js/app.js') }}"></script>
+{% endblock %}
 ```
 
 Don't forget to include your stylesheet files.
 
-Now, suppose you have an ``Author`` entity, with a related ``Book`` entity (One-to-Many).
-You want to display a ``book`` field inside a form describing you author, and you can't
-use a plain ``entity`` field, since books are many thousands.
-In your FormType, change field type from ``entity`` to ``autocomplete``:
+Now, suppose you have an `Author` entity, with a related `Book` entity (One-to-Many).
+You want to display an `author` field inside a form describing your book, and you can't
+use a plain `entity` field, since authors are many thousands.
+In your FormType, change field type from `entity` to `autocomplete`:
 
 ``` php
 <?php
-// AppBundle/Form/Type/AuthorFormType.php
+// AppBundle/Form/BookType.php
 
 // ...
 
-class AuthorFormType extends AbstractType
+class AuthorType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('book', 'autocomplete', array('class' => 'AppBundle:Book'))
+            // for Symfony 2, use 'autocomplete' as second argument
+            ->add('author', 'PUGX\AutocompleterBundle\Form\Type\AutocompleteType', array('class' => 'AppBundle:Author'))
         ;
     }
 }
 ```
 
-As you can see, you must pass ``class`` as option to field. The class is the name of
+As you can see, you must pass `class` as option to field. The class is the name of
 your entity, and it's used to retrieve your objects from the database.
 
 Then, you'll need a couple of actions in your controller.
@@ -88,45 +94,90 @@ Then, you'll need a couple of actions in your controller.
 
 class DefaultController extends Controller
 {
-    public function searchBookAction(Request $request)
+    public function searchAuthorAction(Request $request)
     {
-        $q = $request->get('term');
-        $em = $this->getDoctrine()->getManager();
-        $results = $em->getRepository('AppBundle:Book')->findLikeName($q);
+        $q = $request->query->get('q');
+        $results = $this->getDoctrine()->getRepository('AppBundle:Author')->findLikeName($q);
 
-        return array('results' => $results);
+        return $this->render('your_template.html.twig', array('results' => $results));
     }
 
-    public function getBookAction($id)
+    public function getAuthorAction($id = null)
     {
-        $em = $this->getDoctrine()->getManager();
-        $book = $em->getRepository('AppBundle:Book')->find($id);
+        $author = $this->getDoctrine()->getRepository('AppBundle:Author')->find($id);
 
-        return new Response($book->getName());
+        return new Response($author->getName());
     }
 }
 ```
 
-The first action, ``searchBookAction``, is needed to search books and to display them
-inside your field. Here, a possible ``findLikeName`` repository method is used, to
-search with ``LIKE`` statement (e.g. "pe" will find "War and Peace").
+The first action, `searchAuthorAction`, is needed to search authors and to display them
+inside your field. Here, a possible `findLikeName` repository method is used, to
+search with `LIKE` statement (e.g. "da" will find "Dante Alighieri").
 A possible twig template for first action:
 
 ```jinja
-[{% for book in results -%}
-    {{ {id: book.id, label: book.name, value: book.name}|json_encode|raw }}
+[{% for author in results -%}
+    {{ {id: author.id, label: author.name, value: author.name}|json_encode|raw }}
     {%- if not loop.last %},{% endif -%}
 {%- endfor %}]
 ```
 
-The second action, ``getBookAction``, is needed to display a possible already selected value,
+The second action, `getAuthorAction`, is needed to display a possible already selected value,
 tipically when you display an edit form instead of a form for a new object.
-In this case, the book object is searched by its id (no template is needed, just the name).
+In this case, the author object is searched by its id (no template is needed, just the name).
+Note that this action should work with or without `$id` parameter, since such parameter is just appended to URL.
 
-Last, in your Javascript file, you should enable the autcompleter with following code:
+Last, in your JavaScript file, you should enable the autcompleter with following code:
 
 ```
-$('#book').autocompleter({url_list: '/book_search', url_get: '/book_get/'});
+$('#book_author').autocompleter({
+    url_list: '/author_search',
+    url_get: '/author_get/'
+});
 ```
 
 In which you must adapt both URLs to match the ones pointing to actions previously seen.
+
+### 3.1 Select2 options
+
+If you want to pass additional configuration options to Select2, you can use the `otherOptions` parameter.
+Example:
+
+```
+var options = {
+    url_list: $('#url-list').attr('href'),
+    url_get: $('#url-get').attr('href'),
+    otherOptions: {
+        minimumInputLength: 3,
+        formatNoMatches: 'No author found.',
+        formatSearching: 'Looking authors...',
+        formatInputTooShort: 'Insert at least 3 characters'
+    }
+};
+$('#book_author').autocompleter(options);
+```
+
+### 3.2 Filter
+
+If you use [LexikFormFilterBundle](https://github.com/lexik/LexikFormFilterBundle), you can also use a
+`filter_autocomplete` type in your filter form.
+Example:
+
+``` php
+<?php
+// AppBundle/Form/Type/AuthorFormFilterType.php
+
+// ...
+
+class AuthorFormFilterType extends AbstractType
+{
+    public function buildForm(FormBuilderInterface $builder, array $options)
+    {
+        $builder
+            // for Symfony 2, use 'filter_autocomplete' as second argument
+            ->add('book', 'PUGX\AutocompleterBundle\Form\Type\AutocompleteFilterType', array('class' => 'AppBundle:Book'))
+        ;
+    }
+}
+```

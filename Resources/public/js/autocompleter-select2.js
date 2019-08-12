@@ -54,12 +54,15 @@
             });
             if ($this.val() !== '') {
                 $.ajax({
-                    url:     settings.url_get + $this.val(),
+                    url: (settings.url_get.substring(-1) === '/' ? settings.url_get : settings.url_get + '/') + $this.attr('value'),
                     success: function (name) {
                         $fakeInput.select2('val', name);
                     }
                 });
             }
+            $fakeInput.on('change', function (e) {
+                $this.val(e.val).change();
+            });
         });
     };
 })(jQuery);
